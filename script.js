@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // ========= DOM Elements ==========
+  // DOM elements
   const addNodeBtn = document.getElementById("addNodeBtn");
   const saveMapBtn = document.getElementById("saveMapBtn");
   const loadMapBtn = document.getElementById("loadMapBtn");
@@ -7,19 +7,24 @@ document.addEventListener("DOMContentLoaded", () => {
   const exportBtn = document.getElementById("exportBtn");
   const importBtn = document.getElementById("importBtn");
   const importInput = document.getElementById("importInput");
-
   const mapContainer = document.getElementById("mapContainer");
   const mapViewport = document.getElementById("mapViewport");
   const connectionSvg = document.getElementById("connectionLines");
+  const toggleSidebarBtn = document.getElementById("toggleSidebarBtn");
+  const sidebar = document.getElementById("sidebar");
 
-  // ========= State ==========
+  // Sidebar toggle
+  toggleSidebarBtn.addEventListener("click", () => {
+    sidebar.classList.toggle("collapsed");
+  });
+
   let nodeCount = 0;
   let nodeIdCounter = 0;
   let selectedNode = null;
   let connections = [];
   let nodeMap = {};
 
-  // ========= Zoom & Pan ==========
+  // Zoom & Pan
   let panX = 0;
   let panY = 0;
   let zoomLevel = 1;
@@ -29,7 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
     updateConnectionPositions();
   }
 
-  // ========= Add Node ==========
+  // Add node
   function createNode(text, x = Math.random() * 500, y = Math.random() * 300, id = null) {
     const node = document.createElement("div");
     node.classList.add("mind-node");
@@ -45,7 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
     mapContainer.appendChild(node);
   }
 
-  // ========= Drag Logic ==========
+  // Drag
   const GRID_SIZE = 20;
 
   function makeDraggable(el) {
@@ -68,7 +73,6 @@ document.addEventListener("DOMContentLoaded", () => {
         let newX = initialLeft + dx;
         let newY = initialTop + dy;
 
-        // Snap to grid
         newX = Math.round(newX / GRID_SIZE) * GRID_SIZE;
         newY = Math.round(newY / GRID_SIZE) * GRID_SIZE;
 
@@ -86,7 +90,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }, { once: true });
     });
 
-    // Double click to edit
     el.addEventListener("dblclick", () => {
       const input = document.createElement("input");
       input.type = "text";
@@ -106,7 +109,6 @@ document.addEventListener("DOMContentLoaded", () => {
       input.addEventListener("blur", save);
     });
 
-    // Right-click to delete
     el.addEventListener("contextmenu", (e) => {
       e.preventDefault();
       el.remove();
@@ -114,7 +116,6 @@ document.addEventListener("DOMContentLoaded", () => {
       delete nodeMap[el.dataset.id];
     });
 
-    // Click to connect nodes
     el.addEventListener("click", (e) => {
       e.stopPropagation();
 
@@ -132,7 +133,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ========= Connections ==========
+  // Connections
   function createConnection(fromNode, toNode) {
     const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
     line.setAttribute("stroke", "#444");
@@ -175,7 +176,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ========= Save / Load ==========
+  // Save / Load
   function getMindMapData() {
     const nodes = Object.values(nodeMap).map(node => ({
       id: node.dataset.id,
@@ -214,7 +215,37 @@ document.addEventListener("DOMContentLoaded", () => {
     applyTransform();
   }
 
-  // ========= Export / Import ==========
+  // Button Actions
+  addNodeBtn.addEventListener("click", () => {
+    createNode("Node " + (++nodeCount));
+  });
+
+  saveMapBtn.addEventListener("click", () => {
+    const data = getMindMapData();
+    localStorage.setItem("mindmap", JSON.stringify(data));
+    alert("✅ Mind map saved!");
+  });
+
+  loadMapBtn.addEventListener("click", () => {
+    const saved = localStorage.getItem("mindmap");
+    if (!saved) return alert("⚠️ No saved mind map found.");
+    try {
+      const data = JSON.parse(saved);
+      loadMindMapData(data);
+      alert("✅ Mind map loaded!");
+    } catch (e) {
+      alert("❌ Error loading map.");
+      console.error(e);
+    }
+  });
+
+  resetViewBtn.addEventListener("click", () => {
+    panX = 0;
+    panY = 0;
+    zoomLevel = 1;
+    applyTransform();
+  });
+
   exportBtn.addEventListener("click", () => {
     const data = getMindMapData();
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
@@ -253,38 +284,7 @@ document.addEventListener("DOMContentLoaded", () => {
     reader.readAsText(file);
   });
 
-  // ========= Button Handlers ==========
-  addNodeBtn.addEventListener("click", () => {
-    createNode("Node " + (++nodeCount));
-  });
-
-  saveMapBtn.addEventListener("click", () => {
-    const data = getMindMapData();
-    localStorage.setItem("mindmap", JSON.stringify(data));
-    alert("✅ Mind map saved!");
-  });
-
-  loadMapBtn.addEventListener("click", () => {
-    const saved = localStorage.getItem("mindmap");
-    if (!saved) return alert("⚠️ No saved mind map found.");
-    try {
-      const data = JSON.parse(saved);
-      loadMindMapData(data);
-      alert("✅ Mind map loaded!");
-    } catch (e) {
-      alert("❌ Error loading map.");
-      console.error(e);
-    }
-  });
-
-  resetViewBtn.addEventListener("click", () => {
-    panX = 0;
-    panY = 0;
-    zoomLevel = 1;
-    applyTransform();
-  });
-
-  // ========= Zoom / Pan ==========
+  // Zoom & Pan
   mapViewport.addEventListener("wheel", (e) => {
     e.preventDefault();
     const zoomFactor = 0.1;

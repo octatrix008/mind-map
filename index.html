@@ -7,29 +7,28 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header>
-    <h1>🧠 Mind Map Builder</h1>
-  </header>
+  <div id="layout">
+    <aside id="sidebar">
+      <div class="sidebar-header">
+        <h2>🧠 MindMap</h2>
+        <button id="toggleSidebarBtn" title="Toggle Sidebar">☰</button>
+      </div>
+      <button id="addNodeBtn">➕ Add Node</button>
+      <button id="saveMapBtn">💾 Save</button>
+      <button id="loadMapBtn">📂 Load</button>
+      <button id="resetViewBtn">🔄 Reset View</button>
+      <button id="exportBtn">⬇️ Export</button>
+      <input type="file" id="importInput" accept=".json" hidden />
+      <button id="importBtn">⬆️ Import</button>
+    </aside>
 
-  <div id="toolbar">
-    <button id="addNodeBtn">➕ Add Node</button>
-    <button id="saveMapBtn">💾 Save</button>
-    <button id="loadMapBtn">📂 Load</button>
-    <button id="resetViewBtn">🔄 Reset View</button>
-    <button id="exportBtn">⬇️ Export</button>
-    <input type="file" id="importInput" accept=".json" hidden>
-    <button id="importBtn">⬆️ Import</button>
+    <main id="mapViewport">
+      <svg id="connectionLines"></svg>
+      <div id="mapContainer"></div>
+    </main>
   </div>
-
-  <main>
-    <div id="mapViewport">
-        <div id="mapContainer">
-            <svg id="connectionLines"></svg>
-        <div>
-      <!-- Nodes will be added here -->
-    </div>
-  </main>
 
   <script src="script.js"></script>
 </body>
 </html>
+
