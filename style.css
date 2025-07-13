@@ -1,0 +1,115 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #f4f4f4;
+  color: #333;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  background-color: #007bff;
+  color: #fff;
+  padding: 1rem;
+  text-align: center;
+}
+
+#toolbar {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: #fff;
+  border-bottom: 1px solid #ccc;
+}
+
+#toolbar button {
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 6px;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+#toolbar button:hover {
+  background-color: #0056b3;
+}
+
+main {
+  flex-grow: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+#mapViewport {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #fafafa;
+    cursor: grab;
+}
+
+#mapViewport:active {
+    cursor: grabbing;
+}
+
+#mapContainer {
+    transform-origin: 0 0;
+    transition: transform 0.02s linear;
+}
+
+#mapContainer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background-color: #fff;
+  border-top: 1px solid #ddd;
+
+  background-image: linear-gradient(#eee 1px, transparent 1px), linear-gradient(90deg, #eee 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.mind-node {
+  position: absolute;
+  padding: 10px 15px;
+  background-color: #fff8dc;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  cursor: move;
+  user-select: none;
+  min-width: 100px;
+  text-align: center;
+}
+
+.mind-node.selected {
+  border: 2px solid #007bff;
+}
+
+.mind-node input {
+  font-family: inherit;
+  font-size: 1rem;
+  border: none;
+  background: #fffdf5;
+  outline: none;
+  text-align: center;
+}
+
+#connectionLines {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 0;
+}
