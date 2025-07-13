@@ -1,0 +1,34 @@
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Node.js (if you later use npm or bundlers)
+node_modules/
+dist/
+build/
+
+# Python virtual environments (if any)
+venv/
+__pycache__/
+
+# VS Code workspace settings
+.vscode/
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# OS backup files
+*.bak
+*.swp
+*~
+
+# Ignore local secret config files
+.env
+.env.local
+config.js
+
+# Ignore uploaded/temporary exports (if added later)
+exports/
+uploads/
+
