@@ -2,33 +2,35 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mind Map</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div id="layout">
+    <!-- Sidebar -->
     <aside id="sidebar">
       <div class="sidebar-header">
-        <h2>🧠 MindMap</h2>
-        <button id="toggleSidebarBtn" title="Toggle Sidebar">☰</button>
+        <h2>Mind Map</h2>
+        <button id="toggleSidebarBtn">☰</button>
       </div>
       <button id="addNodeBtn">➕ Add Node</button>
       <button id="saveMapBtn">💾 Save</button>
       <button id="loadMapBtn">📂 Load</button>
-      <button id="resetViewBtn">🔄 Reset View</button>
       <button id="exportBtn">⬇️ Export</button>
-      <input type="file" id="importInput" accept=".json" hidden />
       <button id="importBtn">⬆️ Import</button>
+      <input type="file" id="importInput" style="display: none" />
+      <button id="resetViewBtn">🔄 Reset View</button>
     </aside>
 
+    <!-- Map Viewport -->
     <main id="mapViewport">
       <svg id="connectionLines"></svg>
       <div id="mapContainer"></div>
+      <canvas id="minimap"></canvas>
     </main>
   </div>
 
   <script src="script.js"></script>
 </body>
 </html>
-
