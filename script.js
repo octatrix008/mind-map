@@ -1,4 +1,4 @@
-// Mind Map Script with Sidebar Toggle Fix, Functional Features, and Dark Mode
+// Full-featured Mind Map Script with Right-Click Context Menu
 
 document.addEventListener("DOMContentLoaded", () => {
   const addNodeBtn = document.getElementById("addNodeBtn");
@@ -17,6 +17,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const minimap = document.getElementById("minimap");
   const minimapCtx = minimap.getContext("2d");
   const darkModeToggle = document.getElementById("toggleDarkModeBtn");
+  const contextMenu = document.getElementById("contextMenu");
+  let contextTarget = null;
 
   toggleSidebarBtn.addEventListener("click", () => {
     sidebar.classList.toggle("closed");
@@ -59,35 +61,25 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function updateMinimap() {
-    const canvasWidth = minimap.width;
-    const canvasHeight = minimap.height;
     const scaleFactor = 0.1;
-
-    minimapCtx.clearRect(0, 0, canvasWidth, canvasHeight);
-
+    minimapCtx.clearRect(0, 0, minimap.width, minimap.height);
     Object.values(nodeMap).forEach(node => {
       const x = parseFloat(node.style.left) * scaleFactor;
       const y = parseFloat(node.style.top) * scaleFactor;
       minimapCtx.fillStyle = "#666";
       minimapCtx.fillRect(x, y, 10, 10);
     });
-
     connections.forEach(({ from, to }) => {
       const x1 = parseFloat(from.style.left) * scaleFactor + 5;
       const y1 = parseFloat(from.style.top) * scaleFactor + 5;
       const x2 = parseFloat(to.style.left) * scaleFactor + 5;
       const y2 = parseFloat(to.style.top) * scaleFactor + 5;
       minimapCtx.strokeStyle = "#aaa";
-      minimapCtx.lineWidth = 1;
       minimapCtx.beginPath();
       minimapCtx.moveTo(x1, y1);
       minimapCtx.lineTo(x2, y2);
       minimapCtx.stroke();
     });
-
-    minimapCtx.strokeStyle = "#007bff";
-    minimapCtx.lineWidth = 1;
-    minimapCtx.strokeRect(-panX * scaleFactor, -panY * scaleFactor, mapViewport.clientWidth * scaleFactor / zoomLevel, mapViewport.clientHeight * scaleFactor / zoomLevel);
   }
 
   minimap.addEventListener("click", (e) => {
@@ -100,7 +92,7 @@ document.addEventListener("DOMContentLoaded", () => {
     applyTransform();
   });
 
-  function createNode(text, x = Math.random() * 500, y = Math.random() * 300, id = null) {
+  function createNode(text, x = 100, y = 100, id = null) {
     const node = document.createElement("div");
     node.classList.add("mind-node");
     node.innerText = text;
@@ -144,21 +136,22 @@ document.addEventListener("DOMContentLoaded", () => {
       const input = document.createElement("input");
       input.type = "text";
       input.value = el.innerText;
-      input.style.width = "100%";
       el.innerHTML = "";
       el.appendChild(input);
       input.focus();
-      const save = () => el.innerText = input.value || "Untitled";
-      input.addEventListener("keydown", (e) => { if (e.key === "Enter") save(); });
-      input.addEventListener("blur", save);
+      input.addEventListener("keydown", e => e.key === "Enter" && finish());
+      input.addEventListener("blur", finish);
+      function finish() {
+        el.innerText = input.value || "Untitled";
+      }
     });
 
     el.addEventListener("contextmenu", (e) => {
       e.preventDefault();
-      el.remove();
-      removeConnectionsForNode(el);
-      delete nodeMap[el.dataset.id];
-      updateMinimap();
+      contextTarget = el;
+      contextMenu.style.left = e.pageX + "px";
+      contextMenu.style.top = e.pageY + "px";
+      contextMenu.style.display = "block";
     });
 
     el.addEventListener("click", (e) => {
@@ -182,9 +175,17 @@ document.addEventListener("DOMContentLoaded", () => {
     line.setAttribute("stroke", "#444");
     line.setAttribute("stroke-width", "2");
     connectionSvg.appendChild(line);
-    connections.push({ from: fromNode, to: toNode, line });
+    const connection = { from: fromNode, to: toNode, line };
+    connections.push(connection);
     updateConnectionPositions();
     updateMinimap();
+    line.addEventListener("click", () => {
+      if (confirm("Delete this connection?")) {
+        connectionSvg.removeChild(line);
+        connections = connections.filter(c => c !== connection);
+        updateMinimap();
+      }
+    });
   }
 
   function updateConnectionPositions() {
@@ -210,53 +211,50 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  function getMindMapData() {
-    const nodes = Object.values(nodeMap).map(node => ({
-      id: node.dataset.id,
-      text: node.innerText,
-      x: parseFloat(node.style.left),
-      y: parseFloat(node.style.top)
-    }));
-    const links = connections.map(({ from, to }) => ({
-      fromId: from.dataset.id,
-      toId: to.dataset.id
-    }));
-    return { nodes, links };
-  }
+  contextMenu.addEventListener("click", (e) => {
+    const action = e.target.dataset.action;
+    if (!contextTarget) return;
+    if (action === "edit") {
+      contextTarget.dispatchEvent(new Event("dblclick"));
+    } else if (action === "delete") {
+      contextTarget.remove();
+      removeConnectionsForNode(contextTarget);
+      delete nodeMap[contextTarget.dataset.id];
+      updateMinimap();
+    } else if (action === "connect") {
+      if (selectedNode) selectedNode.classList.remove("selected");
+      selectedNode = contextTarget;
+      selectedNode.classList.add("selected");
+    } else if (action === "disconnect") {
+      removeConnectionsForNode(contextTarget);
+      updateMinimap();
+    }
+    contextMenu.style.display = "none";
+  });
 
-  function loadMindMapData(data) {
-    mapContainer.querySelectorAll(".mind-node").forEach(el => el.remove());
-    connectionSvg.innerHTML = "";
-    Object.keys(nodeMap).forEach(id => delete nodeMap[id]);
-    connections = [];
-    selectedNode = null;
-    data.nodes.forEach(node => {
-      createNode(node.text, node.x, node.y, node.id);
-      const num = +node.id.split("_")[1];
-      if (num > nodeIdCounter) nodeIdCounter = num;
-    });
-    data.links.forEach(({ fromId, toId }) => {
-      const from = nodeMap[fromId];
-      const to = nodeMap[toId];
-      if (from && to) createConnection(from, to);
-    });
-    applyTransform();
-  }
+  document.addEventListener("click", () => contextMenu.style.display = "none");
 
   addNodeBtn.addEventListener("click", () => createNode("Node " + (++nodeCount)));
   saveMapBtn.addEventListener("click", () => {
-    const data = getMindMapData();
-    localStorage.setItem("mindmap", JSON.stringify(data));
-    alert("✅ Map saved.");
+    const nodes = Object.values(nodeMap).map(n => ({ id: n.dataset.id, text: n.innerText, x: parseFloat(n.style.left), y: parseFloat(n.style.top) }));
+    const links = connections.map(c => ({ fromId: c.from.dataset.id, toId: c.to.dataset.id }));
+    localStorage.setItem("mindmap", JSON.stringify({ nodes, links }));
+    alert("Map saved!");
   });
   loadMapBtn.addEventListener("click", () => {
     const saved = localStorage.getItem("mindmap");
-    if (!saved) return alert("⚠️ No saved map.");
-    try {
-      loadMindMapData(JSON.parse(saved));
-    } catch (e) {
-      alert("❌ Load error");
-    }
+    if (!saved) return alert("No map found");
+    const data = JSON.parse(saved);
+    Object.values(nodeMap).forEach(n => n.remove());
+    connectionSvg.innerHTML = "";
+    connections = [];
+    nodeMap = {};
+    data.nodes.forEach(n => createNode(n.text, n.x, n.y, n.id));
+    data.links.forEach(l => {
+      const from = nodeMap[l.fromId];
+      const to = nodeMap[l.toId];
+      if (from && to) createConnection(from, to);
+    });
   });
   resetViewBtn.addEventListener("click", () => {
     panX = panY = 0;
@@ -264,21 +262,19 @@ document.addEventListener("DOMContentLoaded", () => {
     applyTransform();
   });
   exportBtn.addEventListener("click", () => {
-    const data = getMindMapData();
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const data = localStorage.getItem("mindmap");
+    const blob = new Blob([data], { type: "application/json" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
     link.download = "mindmap.json";
-    document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
   });
   importBtn.addEventListener("click", () => importInput.click());
   importInput.addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = e => loadMindMapData(JSON.parse(e.target.result));
+    reader.onload = () => loadMapBtn.click();
     reader.readAsText(file);
   });
 
@@ -286,32 +282,34 @@ document.addEventListener("DOMContentLoaded", () => {
     e.preventDefault();
     const zoomFactor = 0.1;
     const oldZoom = zoomLevel;
-    zoomLevel *= (e.deltaY < 0) ? (1 + zoomFactor) : (1 - zoomFactor);
-    zoomLevel = Math.min(Math.max(zoomLevel, 0.3), 3);
+    zoomLevel *= e.deltaY < 0 ? 1 + zoomFactor : 1 - zoomFactor;
+    zoomLevel = Math.max(0.3, Math.min(zoomLevel, 3));
     const rect = mapViewport.getBoundingClientRect();
-    const cx = e.clientX - rect.left;
-    const cy = e.clientY - rect.top;
-    const dx = cx - panX;
-    const dy = cy - panY;
+    const dx = e.clientX - rect.left - panX;
+    const dy = e.clientY - rect.top - panY;
     panX -= dx * (zoomLevel / oldZoom - 1);
     panY -= dy * (zoomLevel / oldZoom - 1);
     applyTransform();
   });
 
   let isPanning = false;
-  let startPanX, startPanY;
   mapViewport.addEventListener("mousedown", (e) => {
     if (e.target.closest(".mind-node")) return;
     isPanning = true;
-    startPanX = e.clientX - panX;
-    startPanY = e.clientY - panY;
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startPanX = panX;
+    const startPanY = panY;
+    function moveHandler(e) {
+      panX = startPanX + (e.clientX - startX);
+      panY = startPanY + (e.clientY - startY);
+      applyTransform();
+    }
+    function upHandler() {
+      document.removeEventListener("mousemove", moveHandler);
+      document.removeEventListener("mouseup", upHandler);
+    }
+    document.addEventListener("mousemove", moveHandler);
+    document.addEventListener("mouseup", upHandler);
   });
-  mapViewport.addEventListener("mousemove", (e) => {
-    if (!isPanning) return;
-    panX = e.clientX - startPanX;
-    panY = e.clientY - startPanY;
-    applyTransform();
-  });
-  mapViewport.addEventListener("mouseup", () => isPanning = false);
-  mapViewport.addEventListener("mouseleave", () => isPanning = false);
 });
