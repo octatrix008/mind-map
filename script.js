@@ -1,4 +1,4 @@
-// Mind Map Script with Minimap View and Fixed Connection Alignment
+// Mind Map Script with Sidebar Toggle Fix, Functional Features, and Dark Mode
 
 document.addEventListener("DOMContentLoaded", () => {
   const addNodeBtn = document.getElementById("addNodeBtn");
@@ -12,12 +12,33 @@ document.addEventListener("DOMContentLoaded", () => {
   const mapViewport = document.getElementById("mapViewport");
   const connectionSvg = document.getElementById("connectionLines");
   const toggleSidebarBtn = document.getElementById("toggleSidebarBtn");
+  const showSidebarBtn = document.getElementById("showSidebarBtn");
   const sidebar = document.getElementById("sidebar");
   const minimap = document.getElementById("minimap");
   const minimapCtx = minimap.getContext("2d");
+  const darkModeToggle = document.getElementById("toggleDarkModeBtn");
 
   toggleSidebarBtn.addEventListener("click", () => {
-    sidebar.classList.toggle("collapsed");
+    sidebar.classList.toggle("closed");
+    showSidebarBtn.style.display = sidebar.classList.contains("closed") ? "block" : "none";
+  });
+
+  showSidebarBtn.addEventListener("click", () => {
+    sidebar.classList.remove("closed");
+    showSidebarBtn.style.display = "none";
+  });
+
+  function applyDarkMode(enabled) {
+    document.body.classList.toggle("dark-mode", enabled);
+    localStorage.setItem("darkMode", enabled);
+    darkModeToggle.innerText = enabled ? "☀️ Light Mode" : "🌙 Dark Mode";
+  }
+
+  applyDarkMode(localStorage.getItem("darkMode") === "true");
+
+  darkModeToggle.addEventListener("click", () => {
+    const isDark = document.body.classList.contains("dark-mode");
+    applyDarkMode(!isDark);
   });
 
   let nodeCount = 0;
@@ -32,8 +53,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const GRID_SIZE = 20;
 
   function applyTransform() {
-    const transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
-    mapContainer.style.transform = transform;
+    mapContainer.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
     updateConnectionPositions();
     updateMinimap();
   }
@@ -168,23 +188,15 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function updateConnectionPositions() {
-    const rect = mapViewport.getBoundingClientRect();
-
     connections.forEach(({ from, to, line }) => {
-    const fromX = parseFloat(from.style.left) * zoomLevel + panX;
-    const fromY = parseFloat(from.style.top) * zoomLevel + panY;
-    const toX = parseFloat(to.style.left) * zoomLevel + panX;
-    const toY = parseFloat(to.style.top) * zoomLevel + panY;
-
-    const fromCX = fromX + from.offsetWidth * zoomLevel / 2;
-    const fromCY = fromY + from.offsetHeight * zoomLevel / 2;
-    const toCX = toX + to.offsetWidth * zoomLevel / 2;
-    const toCY = toY + to.offsetHeight * zoomLevel / 2;
-
-    line.setAttribute("x1", fromCX);
-    line.setAttribute("y1", fromCY);
-    line.setAttribute("x2", toCX);
-    line.setAttribute("y2", toCY);
+      const x1 = parseFloat(from.style.left) * zoomLevel + panX + from.offsetWidth * zoomLevel / 2;
+      const y1 = parseFloat(from.style.top) * zoomLevel + panY + from.offsetHeight * zoomLevel / 2;
+      const x2 = parseFloat(to.style.left) * zoomLevel + panX + to.offsetWidth * zoomLevel / 2;
+      const y2 = parseFloat(to.style.top) * zoomLevel + panY + to.offsetHeight * zoomLevel / 2;
+      line.setAttribute("x1", x1);
+      line.setAttribute("y1", y1);
+      line.setAttribute("x2", x2);
+      line.setAttribute("y2", y2);
     });
   }
 

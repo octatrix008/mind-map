@@ -12,7 +12,7 @@
     <aside id="sidebar">
       <div class="sidebar-header">
         <h2>Mind Map</h2>
-        <button id="toggleSidebarBtn">☰</button>
+        <button id="toggleSidebarBtn">✖</button>
       </div>
       <button id="addNodeBtn">➕ Add Node</button>
       <button id="saveMapBtn">💾 Save</button>
@@ -25,11 +25,21 @@
 
     <!-- Map Viewport -->
     <main id="mapViewport">
+      <button id="showSidebarBtn">☰ Open</button>
+      <button id="toggleDarkModeBtn" class="top-right">🌙</button>
       <svg id="connectionLines"></svg>
       <div id="mapContainer"></div>
       <canvas id="minimap"></canvas>
     </main>
   </div>
+
+  <ul id="contextMenu" class="context-menu">
+  <li data-action="edit">📝 Edit Text</li>
+  <li data-action="delete">❌ Delete Node</li>
+  <li data-action="connect">🔌 Start Connection</li>
+  <li data-action="disconnect">🧷 Disconnect All</li>
+  </ul>
+
 
   <script src="script.js"></script>
 </body>
