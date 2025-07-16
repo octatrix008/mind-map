@@ -7,40 +7,38 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="layout">
-    <!-- Sidebar -->
-    <aside id="sidebar">
-      <div class="sidebar-header">
-        <h2>Mind Map</h2>
-        <button id="toggleSidebarBtn">✖</button>
-      </div>
-      <button id="addNodeBtn">➕ Add Node</button>
-      <button id="saveMapBtn">💾 Save</button>
-      <button id="loadMapBtn">📂 Load</button>
-      <button id="exportBtn">⬇️ Export</button>
-      <button id="importBtn">⬆️ Import</button>
-      <input type="file" id="importInput" style="display: none" />
-      <button id="resetViewBtn">🔄 Reset View</button>
-    </aside>
-
-    <!-- Map Viewport -->
-    <main id="mapViewport">
-      <button id="showSidebarBtn">☰ Open</button>
-      <button id="toggleDarkModeBtn" class="top-right">🌙</button>
-      <svg id="connectionLines"></svg>
-      <div id="mapContainer"></div>
-      <canvas id="minimap"></canvas>
-    </main>
+  <!-- 🎛️ Top Toolbar -->
+  <div id="topToolbar" class="toolbar">
+    <button id="addNodeBtn" title="Add Node">➕</button>
+    <button id="saveMapBtn" title="Save Map">💾</button>
+    <button id="loadMapBtn" title="Load Map">📂</button>
+    <button id="exportBtn" title="Export">📤</button>
+    <button id="importBtn" title="Import">📥</button>
+    <button id="resetViewBtn" title="Reset View">🔄</button>
+    <button id="toggleDarkModeBtn" title="Toggle Dark Mode">🌙 Dark Mode</button>
+    <input type="file" id="importInput" hidden />
   </div>
 
-  <ul id="contextMenu" class="context-menu">
-  <li data-action="edit">📝 Edit Text</li>
-  <li data-action="delete">❌ Delete Node</li>
-  <li data-action="connect">🔌 Start Connection</li>
-  <li data-action="disconnect">🧷 Disconnect All</li>
-  </ul>
+  <!-- 🗺️ Main Viewport -->
+  <div id="mapViewport">
+    <svg id="connectionLines"></svg>
+    <div id="mapContainer"></div>
+  </div>
 
+  <!-- 🧭 Minimap -->
+  <canvas id="minimap" width="200" height="150"></canvas>
+
+  <!-- 📜 Right Click Context Menu -->
+  <div id="contextMenu" class="context-menu">
+    <div data-action="edit">✏️ Edit</div>
+    <div data-action="delete">❌ Delete</div>
+    <div data-action="connect">🔗 Connect</div>
+    <div data-action="disconnect">🧹 Disconnect</div>
+    <div data-action="color">🎨 Color</div>
+    <div data-action="icon">🔤 Icon</div>
+  </div>
 
   <script src="script.js"></script>
 </body>
 </html>
+

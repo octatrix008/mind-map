@@ -1,6 +1,7 @@
-// Full-featured Mind Map Script with Right-Click Context Menu
+// 📌 Full-featured Mind Map Script with Top Toolbar, Custom Color & Emoji Support
 
 document.addEventListener("DOMContentLoaded", () => {
+  // 🌐 UI Elements
   const addNodeBtn = document.getElementById("addNodeBtn");
   const saveMapBtn = document.getElementById("saveMapBtn");
   const loadMapBtn = document.getElementById("loadMapBtn");
@@ -11,25 +12,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const mapContainer = document.getElementById("mapContainer");
   const mapViewport = document.getElementById("mapViewport");
   const connectionSvg = document.getElementById("connectionLines");
-  const toggleSidebarBtn = document.getElementById("toggleSidebarBtn");
-  const showSidebarBtn = document.getElementById("showSidebarBtn");
-  const sidebar = document.getElementById("sidebar");
   const minimap = document.getElementById("minimap");
   const minimapCtx = minimap.getContext("2d");
   const darkModeToggle = document.getElementById("toggleDarkModeBtn");
   const contextMenu = document.getElementById("contextMenu");
   let contextTarget = null;
 
-  toggleSidebarBtn.addEventListener("click", () => {
-    sidebar.classList.toggle("closed");
-    showSidebarBtn.style.display = sidebar.classList.contains("closed") ? "block" : "none";
-  });
-
-  showSidebarBtn.addEventListener("click", () => {
-    sidebar.classList.remove("closed");
-    showSidebarBtn.style.display = "none";
-  });
-
+  // 🌓 Dark Mode Toggle
   function applyDarkMode(enabled) {
     document.body.classList.toggle("dark-mode", enabled);
     localStorage.setItem("darkMode", enabled);
@@ -37,29 +26,26 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   applyDarkMode(localStorage.getItem("darkMode") === "true");
+  darkModeToggle.addEventListener("click", () => applyDarkMode(!document.body.classList.contains("dark-mode")));
 
-  darkModeToggle.addEventListener("click", () => {
-    const isDark = document.body.classList.contains("dark-mode");
-    applyDarkMode(!isDark);
-  });
-
+  // 🧠 Mind Map State
   let nodeCount = 0;
   let nodeIdCounter = 0;
   let selectedNode = null;
   let connections = [];
   let nodeMap = {};
 
-  let panX = 0;
-  let panY = 0;
-  let zoomLevel = 1;
+  let panX = 0, panY = 0, zoomLevel = 1;
   const GRID_SIZE = 20;
 
+  // 🎯 Transform Canvas
   function applyTransform() {
     mapContainer.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
     updateConnectionPositions();
     updateMinimap();
   }
 
+  // 🗺️ Minimap
   function updateMinimap() {
     const scaleFactor = 0.1;
     minimapCtx.clearRect(0, 0, minimap.width, minimap.height);
@@ -92,20 +78,24 @@ document.addEventListener("DOMContentLoaded", () => {
     applyTransform();
   });
 
-  function createNode(text, x = 100, y = 100, id = null) {
+  // 🧱 Create Node
+  function createNode(text, x = 100, y = 100, id = null, color = "#ffffff", icon = "") {
     const node = document.createElement("div");
     node.classList.add("mind-node");
-    node.innerText = text;
+    node.dataset.id = id || "node_" + (++nodeIdCounter);
+    node.dataset.color = color;
+    node.dataset.icon = icon;
+    node.innerHTML = `<span class="emoji">${icon}</span> ${text}`;
+    node.style.backgroundColor = color;
     node.style.left = x + "px";
     node.style.top = y + "px";
-    const nodeId = id || "node_" + (++nodeIdCounter);
-    node.dataset.id = nodeId;
-    nodeMap[nodeId] = node;
+    nodeMap[node.dataset.id] = node;
     makeDraggable(node);
     mapContainer.appendChild(node);
     updateMinimap();
   }
 
+  // ↔️ Draggable Nodes with Context Menu
   function makeDraggable(el) {
     let pointerMoveHandler;
     el.addEventListener("pointerdown", (e) => {
@@ -116,10 +106,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const initialTop = parseFloat(el.style.top);
       el.setPointerCapture(e.pointerId);
       pointerMoveHandler = (e) => {
-        let newX = initialLeft + (e.clientX - startX);
-        let newY = initialTop + (e.clientY - startY);
-        newX = Math.round(newX / GRID_SIZE) * GRID_SIZE;
-        newY = Math.round(newY / GRID_SIZE) * GRID_SIZE;
+        let newX = Math.round((initialLeft + (e.clientX - startX)) / GRID_SIZE) * GRID_SIZE;
+        let newY = Math.round((initialTop + (e.clientY - startY)) / GRID_SIZE) * GRID_SIZE;
         el.style.left = newX + "px";
         el.style.top = newY + "px";
         updateConnectionPositions();
@@ -142,7 +130,8 @@ document.addEventListener("DOMContentLoaded", () => {
       input.addEventListener("keydown", e => e.key === "Enter" && finish());
       input.addEventListener("blur", finish);
       function finish() {
-        el.innerText = input.value || "Untitled";
+        const icon = el.dataset.icon || "";
+        el.innerHTML = `<span class="emoji">${icon}</span> ${input.value || "Untitled"}`;
       }
     });
 
@@ -170,6 +159,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // 🔗 Connection Handling
   function createConnection(fromNode, toNode) {
     const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
     line.setAttribute("stroke", "#444");
@@ -211,6 +201,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // 📜 Context Menu Actions
   contextMenu.addEventListener("click", (e) => {
     const action = e.target.dataset.action;
     if (!contextTarget) return;
@@ -228,56 +219,33 @@ document.addEventListener("DOMContentLoaded", () => {
     } else if (action === "disconnect") {
       removeConnectionsForNode(contextTarget);
       updateMinimap();
+    } else if (action === "color") {
+      const input = document.createElement("input");
+      input.type = "color";
+      input.value = contextTarget.dataset.color || "#ffffff";
+      input.style.position = "fixed";
+      input.style.left = "-9999px";
+      document.body.appendChild(input);
+      input.click();
+      input.addEventListener("input", () => {
+        contextTarget.style.backgroundColor = input.value;
+        contextTarget.dataset.color = input.value;
+        document.body.removeChild(input);
+      });
+    } else if (action === "icon") {
+      const icon = prompt("Enter emoji/icon (e.g. ✅, 💡, 📌):", contextTarget.dataset.icon || "");
+      if (icon !== null) {
+        contextTarget.dataset.icon = icon;
+        const text = contextTarget.innerText;
+        contextTarget.innerHTML = `<span class="emoji">${icon}</span> ${text}`;
+      }
     }
     contextMenu.style.display = "none";
   });
 
   document.addEventListener("click", () => contextMenu.style.display = "none");
 
-  addNodeBtn.addEventListener("click", () => createNode("Node " + (++nodeCount)));
-  saveMapBtn.addEventListener("click", () => {
-    const nodes = Object.values(nodeMap).map(n => ({ id: n.dataset.id, text: n.innerText, x: parseFloat(n.style.left), y: parseFloat(n.style.top) }));
-    const links = connections.map(c => ({ fromId: c.from.dataset.id, toId: c.to.dataset.id }));
-    localStorage.setItem("mindmap", JSON.stringify({ nodes, links }));
-    alert("Map saved!");
-  });
-  loadMapBtn.addEventListener("click", () => {
-    const saved = localStorage.getItem("mindmap");
-    if (!saved) return alert("No map found");
-    const data = JSON.parse(saved);
-    Object.values(nodeMap).forEach(n => n.remove());
-    connectionSvg.innerHTML = "";
-    connections = [];
-    nodeMap = {};
-    data.nodes.forEach(n => createNode(n.text, n.x, n.y, n.id));
-    data.links.forEach(l => {
-      const from = nodeMap[l.fromId];
-      const to = nodeMap[l.toId];
-      if (from && to) createConnection(from, to);
-    });
-  });
-  resetViewBtn.addEventListener("click", () => {
-    panX = panY = 0;
-    zoomLevel = 1;
-    applyTransform();
-  });
-  exportBtn.addEventListener("click", () => {
-    const data = localStorage.getItem("mindmap");
-    const blob = new Blob([data], { type: "application/json" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "mindmap.json";
-    link.click();
-  });
-  importBtn.addEventListener("click", () => importInput.click());
-  importInput.addEventListener("change", (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => loadMapBtn.click();
-    reader.readAsText(file);
-  });
-
+  // 🖱️ Zoom & Pan
   mapViewport.addEventListener("wheel", (e) => {
     e.preventDefault();
     const zoomFactor = 0.1;
@@ -292,14 +260,10 @@ document.addEventListener("DOMContentLoaded", () => {
     applyTransform();
   });
 
-  let isPanning = false;
   mapViewport.addEventListener("mousedown", (e) => {
     if (e.target.closest(".mind-node")) return;
-    isPanning = true;
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const startPanX = panX;
-    const startPanY = panY;
+    const startX = e.clientX, startY = e.clientY;
+    const startPanX = panX, startPanY = panY;
     function moveHandler(e) {
       panX = startPanX + (e.clientX - startX);
       panY = startPanY + (e.clientY - startY);
@@ -311,5 +275,64 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     document.addEventListener("mousemove", moveHandler);
     document.addEventListener("mouseup", upHandler);
+  });
+
+  // 💾 Save/Load
+  addNodeBtn.addEventListener("click", () => createNode("Node " + (++nodeCount)));
+  saveMapBtn.addEventListener("click", () => {
+    const nodes = Object.values(nodeMap).map(n => ({
+      id: n.dataset.id,
+      text: n.innerText,
+      x: parseFloat(n.style.left),
+      y: parseFloat(n.style.top),
+      color: n.dataset.color,
+      icon: n.dataset.icon
+    }));
+    const links = connections.map(c => ({ fromId: c.from.dataset.id, toId: c.to.dataset.id }));
+    localStorage.setItem("mindmap", JSON.stringify({ nodes, links }));
+    alert("Map saved!");
+  });
+
+  loadMapBtn.addEventListener("click", () => {
+    const saved = localStorage.getItem("mindmap");
+    if (!saved) return alert("No map found");
+    const data = JSON.parse(saved);
+    Object.values(nodeMap).forEach(n => n.remove());
+    connectionSvg.innerHTML = "";
+    connections = [];
+    nodeMap = {};
+    data.nodes.forEach(n => createNode(n.text, n.x, n.y, n.id, n.color, n.icon));
+    data.links.forEach(l => {
+      const from = nodeMap[l.fromId];
+      const to = nodeMap[l.toId];
+      if (from && to) createConnection(from, to);
+    });
+  });
+
+  resetViewBtn.addEventListener("click", () => {
+    panX = panY = 0;
+    zoomLevel = 1;
+    applyTransform();
+  });
+
+  exportBtn.addEventListener("click", () => {
+    const data = localStorage.getItem("mindmap");
+    const blob = new Blob([data], { type: "application/json" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "mindmap.json";
+    link.click();
+  });
+
+  importBtn.addEventListener("click", () => importInput.click());
+  importInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      localStorage.setItem("mindmap", reader.result);
+      loadMapBtn.click();
+    };
+    reader.readAsText(file);
   });
 });
