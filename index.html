@@ -1,41 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
   <title>Mind Map</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="style.css" rel="stylesheet">
 </head>
 <body>
-  <!-- 🎛️ Top Toolbar -->
-  <div id="topToolbar" class="toolbar">
-    <button id="addNodeBtn" title="Add Node">➕</button>
-    <button id="saveMapBtn" title="Save Map">💾</button>
-    <button id="loadMapBtn" title="Load Map">📂</button>
-    <button id="exportBtn" title="Export">📤</button>
-    <button id="importBtn" title="Import">📥</button>
-    <button id="resetViewBtn" title="Reset View">🔄</button>
-    <button id="toggleDarkModeBtn" title="Toggle Dark Mode">🌙 Dark Mode</button>
-    <input type="file" id="importInput" hidden />
-  </div>
-
-  <!-- 🗺️ Main Viewport -->
+  <!-- 🌐 Mind Map Viewport -->
   <div id="mapViewport">
-    <svg id="connectionLines"></svg>
     <div id="mapContainer"></div>
   </div>
 
-  <!-- 🧭 Minimap -->
-  <canvas id="minimap" width="200" height="150"></canvas>
-
-  <!-- 📜 Right Click Context Menu -->
+  <!-- 🎨 Context Menu -->
   <div id="contextMenu" class="context-menu">
     <div data-action="edit">✏️ Edit</div>
     <div data-action="delete">❌ Delete</div>
-    <div data-action="connect">🔗 Connect</div>
-    <div data-action="disconnect">🧹 Disconnect</div>
     <div data-action="color">🎨 Color</div>
     <div data-action="icon">🔤 Icon</div>
+  </div>
+
+  <!-- 🧭 Minimap (Optional) -->
+  <canvas id="minimap"></canvas>
+
+  <!-- 🛠️ Toolbar -->
+  <div class="toolbar">
+    <button id="addNodeBtn" title="Add Node">➕</button>
+    <button id="jsonToggleBtn" title="View/Edit JSON">🧾</button>
+    <button id="toggleDarkModeBtn" title="Toggle Dark Mode">🌙</button>
+  </div>
+  
+  <!-- JSON View/Edit Mode -->
+  <div id="jsonPanel">
+   <h3>🧾 JSON View/Edit</h3>
+   <textarea id="jsonTextarea" spellcheck="false"></textarea>
+   <div class="json-buttons">
+     <button id="applyJsonBtn">Apply</button>
+     <button id="closeJsonBtn">Close</button>
+   </div>
   </div>
 
   <script src="script.js"></script>
