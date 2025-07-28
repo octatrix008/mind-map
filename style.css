@@ -1,23 +1,66 @@
+/* 🎨 Color Palette & Variables */
+:root {
+  --bg-color: #f0f0f0;
+  --text-color: #212529;
+  --border-color: #ccc;
+  --shadow-color: rgba(0, 0, 0, 0.15);
+  --grid-line-color: #ccc;
+  --selection-color: #007bff;
+
+  --node-bg: #fff;
+  --node-text: #212529;
+
+  --menu-bg: #fff;
+  --menu-hover-bg: #eee;
+
+  --toolbar-bg: rgba(255, 255, 255, 0.9);
+  --toolbar-hover-bg: rgba(0, 0, 0, 0.05);
+
+  --json-panel-bg: #fff;
+  --json-textarea-bg: #fff;
+  --json-textarea-text: #111;
+  --json-textarea-border: #aaa;
+}
+
+body.dark-mode {
+  --bg-color: #181818;
+  --text-color: #eee;
+  --border-color: #555;
+  --shadow-color: rgba(0, 0, 0, 0.2);
+  --grid-line-color: #444;
+
+  --node-bg: #333;
+  --node-text: #fff;
+
+  --menu-bg: #333;
+  --menu-hover-bg: #444;
+
+  --toolbar-bg: rgba(34, 34, 34, 0.9);
+  --toolbar-hover-bg: rgba(255, 255, 255, 0.1);
+
+  --json-panel-bg: #222;
+  --json-textarea-bg: #111;
+  --json-textarea-text: #fff;
+  --json-textarea-border: #555;
+}
+
 /* 🌙 General Layout */
 body {
   margin: 0;
   font-family: sans-serif;
-  background: #f0f0f0;
+  background: var(--bg-color);
   overflow: hidden;
-}
-
-body.dark-mode {
-  background: #181818;
-  color: #eee;
+  color: var(--text-color);
 }
 
 /* 🧠 Nodes */
 .mind-node {
   position: absolute;
   padding: 10px 15px;
-  background: #fff;
+  background: var(--node-bg);
+  color: var(--node-text);
   border-radius: 6px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 6px var(--shadow-color);
   cursor: pointer;
   user-select: none;
   transition: transform 0.1s;
@@ -25,13 +68,8 @@ body.dark-mode {
   font-size: 16px;
 }
 
-body.dark-mode .mind-node {
-  background: #333;
-  color: #fff;
-}
-
 .mind-node.selected {
-  outline: 2px solid #007bff;
+  outline: 2px solid var(--selection-color);
 }
 
 .mind-node .icon {
@@ -46,13 +84,8 @@ body.dark-mode .mind-node {
   position: relative;
   overflow: hidden;
   background-size: 20px 20px;
-  background-image: linear-gradient(to right, #ccc 1px, transparent 1px),
-                    linear-gradient(to bottom, #ccc 1px, transparent 1px);
-}
-
-body.dark-mode #mapViewport {
-  background-image: linear-gradient(to right, #444 1px, transparent 1px),
-                    linear-gradient(to bottom, #444 1px, transparent 1px);
+  background-image: linear-gradient(to right, var(--grid-line-color) 1px, transparent 1px),
+                    linear-gradient(to bottom, var(--grid-line-color) 1px, transparent 1px);
 }
 
 #mapContainer {
@@ -71,72 +104,69 @@ body.dark-mode #mapViewport {
   right: 10px;
   width: 200px;
   height: 150px;
-  background: #fff;
-  border: 1px solid #ccc;
+  background: var(--menu-bg);
+  border: 1px solid var(--border-color);
   z-index: 10;
 }
 
 body.dark-mode #minimap {
-  background: #222;
-  border-color: #555;
+  background: var(--json-panel-bg); /* Using json panel bg for consistency */
+  border-color: var(--border-color);
 }
 
 /* 🖱️ Context Menu */
 .context-menu {
   position: absolute;
-  background: #fff;
-  border: 1px solid #ccc;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  background: var(--menu-bg);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 6px var(--shadow-color);
   display: none;
   z-index: 1000;
   border-radius: 4px;
   overflow: hidden;
   min-width: 120px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
 }
 
-.context-menu div {
+.context-menu button {
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  width: 100%;
   padding: 8px 12px;
   cursor: pointer;
   white-space: nowrap;
 }
 
-.context-menu div:hover {
-  background: #eee;
-}
-
-body.dark-mode .context-menu {
-  background: #333;
-  border-color: #555;
-}
-
-body.dark-mode .context-menu div:hover {
-  background: #444;
+.context-menu button:hover {
+  background: var(--menu-hover-bg);
 }
 
 /* 🛠️ Toolbar */
 .toolbar {
   position: fixed;
   top: 10px;
-  right: 10px;
-  background: rgba(255, 255, 255, 0.9);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--toolbar-bg);
   border-radius: 8px;
   padding: 6px 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px var(--shadow-color);
   z-index: 1000;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-body.dark-mode .toolbar {
-  background: rgba(34, 34, 34, 0.9);
-  color: #eee;
-}
-
 .toolbar button {
   font-size: 18px;
   background: none;
   border: none;
+  color: inherit;
   cursor: pointer;
   padding: 6px;
   border-radius: 6px;
@@ -144,12 +174,8 @@ body.dark-mode .toolbar {
 }
 
 .toolbar button:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--toolbar-hover-bg);
   transform: scale(1.1);
-}
-
-body.dark-mode .toolbar button:hover {
-  background: rgba(255, 255, 255, 0.1);
 }
 
 /* JSON View/Edit Mode */
@@ -159,43 +185,36 @@ body.dark-mode .toolbar button:hover {
   right: 10px;
   width: 400px;
   height: 70%;
-  background: #fff;
-  border: 1px solid #ccc;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  background: var(--json-panel-bg);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 12px var(--shadow-color);
   z-index: 2000;
   display: none;
   flex-direction: column;
   padding: 10px;
   border-radius: 8px;
 }
-body.dark-mode #jsonPanel {
-  background: #222;
-  color: #eee;
-  border-color: #555;
-}
+
 #jsonPanel h3 {
   margin-top: 0;
 }
+
 #jsonTextarea {
   flex: 1;
   width: 100%;
-  height: 80%;
   font-family: monospace;
   font-size: 14px;
   padding: 8px;
-  border: 1px solid #aaa;
+  border: 1px solid var(--json-textarea-border);
+  background: var(--json-textarea-bg);
+  color: var(--json-textarea-text);
   resize: none;
   border-radius: 6px;
 }
-body.dark-mode #jsonTextarea {
-  background: #111;
-  color: #fff;
-  border-color: #555;
-}
+
 .json-buttons {
   margin-top: 10px;
   display: flex;
   justify-content: flex-end;
   gap: 10px;
 }
-

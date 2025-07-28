@@ -9,15 +9,16 @@
 <body>
   <!-- 🌐 Mind Map Viewport -->
   <div id="mapViewport">
+    <svg id="connector-lines" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></svg>
     <div id="mapContainer"></div>
   </div>
 
   <!-- 🎨 Context Menu -->
   <div id="contextMenu" class="context-menu">
-    <div data-action="edit">✏️ Edit</div>
-    <div data-action="delete">❌ Delete</div>
-    <div data-action="color">🎨 Color</div>
-    <div data-action="icon">🔤 Icon</div>
+    <button data-action="edit">✏️ Edit</button>
+    <button data-action="delete">❌ Delete</button>
+    <button data-action="color">🎨 Color</button>
+    <button data-action="icon">🔤 Icon</button>
   </div>
 
   <!-- 🧭 Minimap (Optional) -->
@@ -26,6 +27,7 @@
   <!-- 🛠️ Toolbar -->
   <div class="toolbar">
     <button id="addNodeBtn" title="Add Node">➕</button>
+    <button id="connectNodeBtn" title="Connect Nodes">🔗</button>
     <button id="jsonToggleBtn" title="View/Edit JSON">🧾</button>
     <button id="toggleDarkModeBtn" title="Toggle Dark Mode">🌙</button>
   </div>
@@ -43,4 +45,3 @@
   <script src="script.js"></script>
 </body>
 </html>
-
