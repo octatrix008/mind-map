@@ -1,3 +1,21 @@
+:root {
+  --primary-color: #4a90e2;
+  --secondary-color: #f5a623;
+  --background-color: #f8f9fa;
+  --canvas-background: #ffffff;
+  --text-color: #333333;
+  --node-bg: #ffffff;
+  --node-border: #d0d0d0;
+  --node-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --node-selected-bg: #e7f3ff;
+  --node-selected-border: #4a90e2;
+  --connection-color: #c5c5c5;
+  --toolbar-bg: #ffffff;
+  --toolbar-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -5,43 +23,62 @@
 }
 
 body {
-  font-family: 'Segoe UI', sans-serif;
-  background-color: #f4f4f4;
-  color: #333;
+  font-family: var(--font-family);
+  background-color: var(--background-color);
+  color: var(--text-color);
   height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 header {
-  background-color: #007bff;
-  color: #fff;
-  padding: 1rem;
+  background-color: var(--primary-color);
+  color: white;
+  padding: 12px 24px;
   text-align: center;
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  box-shadow: var(--toolbar-shadow);
+  z-index: 10;
 }
 
 #toolbar {
   display: flex;
   justify-content: center;
-  gap: 1rem;
-  padding: 1rem;
-  background-color: #fff;
-  border-bottom: 1px solid #ccc;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background-color: var(--toolbar-bg);
+  border-bottom: 1px solid #e0e0e0;
+  box-shadow: var(--toolbar-shadow);
+  z-index: 10;
 }
 
 #toolbar button {
-  padding: 0.6rem 1.2rem;
-  font-size: 1rem;
-  border: none;
-  border-radius: 6px;
-  background-color: #007bff;
-  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  font-size: 1.2rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background-color: transparent;
+  color: #555;
   cursor: pointer;
-  transition: background 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 #toolbar button:hover {
-  background-color: #0056b3;
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+#toolbar button:active {
+  background-color: #e0e0e0;
+  transform: scale(0.95);
 }
 
 main {
@@ -50,66 +87,31 @@ main {
   overflow: hidden;
 }
 
-#mapViewport {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    background-color: #fafafa;
-    cursor: grab;
-}
-
-#mapViewport:active {
-    cursor: grabbing;
-}
-
-#mapContainer {
-    transform-origin: 0 0;
-    transition: transform 0.02s linear;
-}
-
-#mapContainer {
-  position: relative;
+#mindmap-canvas {
   width: 100%;
   height: 100%;
-  background-color: #fff;
-  border-top: 1px solid #ddd;
-
-  background-image: linear-gradient(#eee 1px, transparent 1px), linear-gradient(90deg, #eee 1px, transparent 1px);
+  background-color: var(--canvas-background);
+  cursor: default;
+  background-image: radial-gradient(#e0e0e0 1px, transparent 1px);
   background-size: 20px 20px;
 }
 
-.mind-node {
+.context-menu {
   position: absolute;
-  padding: 10px 15px;
-  background-color: #fff8dc;
+  background-color: white;
   border: 1px solid #ccc;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  cursor: move;
-  user-select: none;
-  min-width: 100px;
-  text-align: center;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+  border-radius: 5px;
+  display: none;
+  z-index: 1000;
+  padding: 5px 0;
 }
 
-.mind-node.selected {
-  border: 2px solid #007bff;
+.context-menu-item {
+  padding: 8px 15px;
+  cursor: pointer;
 }
 
-.mind-node input {
-  font-family: inherit;
-  font-size: 1rem;
-  border: none;
-  background: #fffdf5;
-  outline: none;
-  text-align: center;
-}
-
-#connectionLines {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-  pointer-events: none;
-  z-index: 0;
+.context-menu-item:hover {
+  background-color: #f0f0f0;
 }

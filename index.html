@@ -3,30 +3,40 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Mind Map</title>
+  <title>Gemini Mind Map</title>
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
 <body>
   <header>
-    <h1>🧠 Mind Map Builder</h1>
+    <h1>Gemini Mind Map</h1>
   </header>
 
   <div id="toolbar">
-    <button id="addNodeBtn">➕ Add Node</button>
-    <button id="saveMapBtn">💾 Save</button>
-    <button id="loadMapBtn">📂 Load</button>
-    <button id="resetViewBtn">🔄 Reset View</button>
+    <button id="addNodeBtn" title="Add Node"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-plus"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
+    <button id="resetViewBtn" title="Reset View"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-refresh-cw"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg></button>
+    <button id="exportBtn" title="Export as JSON"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></button>
+    <button id="importBtn" title="Import from JSON"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-upload"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg></button>
+  </div>
+
+  <div id="context-menu" class="context-menu">
+      <div class="context-menu-item" id="edit-node">Edit</div>
+      <div class="context-menu-item" id="delete-node">Delete</div>
+      <div class="context-menu-item" id="change-color-node">Change Color</div>
+      <div class="context-menu-item" id="change-shape-node">Change Shape</div>
+      <div class="context-menu-item" id="add-image-node">Add Image</div>
+  </div>
+
+  <div id="connection-context-menu" class="context-menu">
+      <div class="context-menu-item" id="change-connection-color">Change Color</div>
+      <div class="context-menu-item" id="change-connection-thickness">Change Thickness</div>
   </div>
 
   <main>
-    <div id="mapViewport">
-        <div id="mapContainer">
-            <svg id="connectionLines"></svg>
-        <div>
-      <!-- Nodes will be added here -->
-    </div>
+    <canvas id="mindmap-canvas"></canvas>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/inter-ui/inter.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
