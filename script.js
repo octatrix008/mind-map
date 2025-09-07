@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const ctx = canvas.getContext('2d');
     const defaultToolbar = document.getElementById('default-toolbar');
     const selectionToolbar = document.getElementById('selection-toolbar');
-    const connectionContextMenu = document.getElementById('connection-context-menu');
+    
     const undoBtn = document.getElementById('undoBtn');
     const redoBtn = document.getElementById('redoBtn');
     const darkModeBtn = document.getElementById('darkModeBtn');
@@ -22,6 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let isDragging = false;
     let didDrag = false;
     let dragStart = { x: 0, y: 0 };
+    let isDrawingConnection = false;
+    let startNode = null;
 
     let scale = 1;
     let pan = { x: 0, y: 0 };
@@ -85,9 +87,35 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateToolbar() {
-        if (selectedNodes.length > 0) {
+        const isNodeSelected = selectedNodes.length > 0;
+        const isConnectionSelected = selectedConnection !== null;
+
+        if (isNodeSelected || isConnectionSelected) {
             defaultToolbar.classList.add('hidden');
             selectionToolbar.classList.remove('hidden');
+
+            // Show/hide connection specific buttons
+            document.getElementById('change-connection-color').classList.toggle('hidden', !isConnectionSelected);
+            document.getElementById('change-connection-thickness').classList.toggle('hidden', !isConnectionSelected);
+            document.getElementById('change-connection-style').classList.toggle('hidden', !isConnectionSelected);
+            document.getElementById('edit-connection-label').classList.toggle('hidden', !isConnectionSelected);
+            document.getElementById('delete-connection').classList.toggle('hidden', !isConnectionSelected);
+
+            // Show/hide node specific buttons
+            document.getElementById('edit-node').classList.toggle('hidden', !isNodeSelected);
+            document.getElementById('delete-node').classList.toggle('hidden', !isNodeSelected);
+            document.getElementById('change-color-node').classList.toggle('hidden', !isNodeSelected);
+            document.getElementById('change-shape-node').classList.toggle('hidden', !isNodeSelected);
+            document.getElementById('add-image-node').classList.toggle('hidden', !isNodeSelected);
+            document.getElementById('align-left').classList.toggle('hidden', !isNodeSelected || selectedNodes.length < 2);
+            document.getElementById('align-center-horizontal').classList.toggle('hidden', !isNodeSelected || selectedNodes.length < 2);
+            document.getElementById('align-right').classList.toggle('hidden', !isNodeSelected || selectedNodes.length < 2);
+            document.getElementById('align-top').classList.toggle('hidden', !isNodeSelected || selectedNodes.length < 2);
+            document.getElementById('align-center-vertical').classList.toggle('hidden', !isNodeSelected || selectedNodes.length < 2);
+            document.getElementById('align-bottom').classList.toggle('hidden', !isNodeSelected || selectedNodes.length < 2);
+            document.getElementById('distribute-horizontal').classList.toggle('hidden', !isNodeSelected || selectedNodes.length < 2);
+            document.getElementById('distribute-vertical').classList.toggle('hidden', !isNodeSelected || selectedNodes.length < 2);
+
         } else {
             defaultToolbar.classList.remove('hidden');
             selectionToolbar.classList.add('hidden');
@@ -362,24 +390,10 @@ document.addEventListener('DOMContentLoaded', () => {
         return { x: (pos.x - pan.x) / scale, y: (pos.y - pan.y) / scale };
     }
 
-    canvas.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-
-        selectedConnection = getConnectionAt(x, y);
-        if (selectedConnection) {
-            connectionContextMenu.style.display = 'block';
-            connectionContextMenu.style.left = `${e.clientX}px`;
-            connectionContextMenu.style.top = `${e.clientY}px`;
-        } else {
-            connectionContextMenu.style.display = 'none';
-        }
-    });
+    
 
     canvas.addEventListener('mousedown', (e) => {
-        connectionContextMenu.style.display = 'none';
+        
         const rect = canvas.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
@@ -396,15 +410,26 @@ document.addEventListener('DOMContentLoaded', () => {
         didDrag = false;
 
         if (draggedNode) {
-            isDragging = true;
-            const worldPos = screenToWorld({ x, y });
-            dragStart.x = worldPos.x - draggedNode.x;
-            dragStart.y = worldPos.y - draggedNode.y;
+            if (e.shiftKey) {
+                isDrawingConnection = true;
+                startNode = draggedNode;
+                selectedNodes = []; // Clear node selection when starting connection
+                selectedConnection = null;
+            } else {
+                isDragging = true;
+                const worldPos = screenToWorld({ x, y });
+                dragStart.x = worldPos.x - draggedNode.x;
+                dragStart.y = worldPos.y - draggedNode.y;
+                selectedNodes = [draggedNode]; // Select the dragged node
+                selectedConnection = null;
+            }
         } else {
-            if (!e.shiftKey) {
+            if (isDrawingConnection) {
+                isDrawingConnection = false;
+                startNode = null;
+            } else if (!e.shiftKey) {
                 selectedNodes = [];
                 selectedConnection = null;
-                updateToolbar();
             }
         }
         draw();
@@ -428,6 +453,21 @@ document.addEventListener('DOMContentLoaded', () => {
             draggedNode.x = worldPos.x - dragStart.x;
             draggedNode.y = worldPos.y - dragStart.y;
             draw();
+        } else if (isDrawingConnection && startNode) {
+            draw(); // Redraw to clear previous temporary line
+            ctx.save();
+            ctx.strokeStyle = getCSSVar('--primary-color'); // Use a distinct color
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]); // Dashed line
+            const fromX = startNode.x + startNode.width / 2;
+            const fromY = startNode.y + startNode.height / 2;
+            const toX = (x - pan.x) / scale;
+            const toY = (y - pan.y) / scale;
+            ctx.beginPath();
+            ctx.moveTo(fromX, fromY);
+            ctx.lineTo(toX, toY);
+            ctx.stroke();
+            ctx.restore();
         }
     });
 
@@ -450,9 +490,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const y = e.clientY - rect.top;
 
         const clickedNode = getNodeAt(x, y);
-        selectedConnection = getConnectionAt(x, y);
+        const clickedConnection = getConnectionAt(x, y);
 
-        if (clickedNode) {
+        if (isDrawingConnection) {
+            if (clickedNode && clickedNode !== startNode) {
+                connections.push({ from: startNode.id, to: clickedNode.id, style: 'solid', arrow: false, label: '' });
+                saveState();
+            }
+            isDrawingConnection = false;
+            startNode = null;
+            selectedNodes = []; // Clear any node selection after connection attempt
+            selectedConnection = null;
+        } else if (clickedNode) {
+            selectedConnection = null; // Clear selected connection if a node is clicked
             if (e.shiftKey) {
                 if (selectedNodes.includes(clickedNode)) {
                     selectedNodes = selectedNodes.filter(n => n !== clickedNode);
@@ -469,9 +519,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     selectedNodes = [clickedNode];
                 }
             }
-        } else if (!selectedConnection) {
+        } else if (clickedConnection) {
+            selectedNodes = []; // Clear selected nodes if a connection is clicked
+            selectedConnection = clickedConnection;
+        } else {
+            // Clicked on empty canvas
             if (!e.shiftKey) {
                 selectedNodes = [];
+                selectedConnection = null;
             }
         }
 
@@ -887,7 +942,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 draw();
             }
         }
-        connectionContextMenu.style.display = 'none';
+        
     });
 
     changeConnectionThicknessBtn.addEventListener('click', () => {
@@ -899,7 +954,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 draw();
             }
         }
-        connectionContextMenu.style.display = 'none';
+        
     });
 
     changeConnectionStyleBtn.addEventListener('click', () => {
@@ -915,7 +970,7 @@ document.addEventListener('DOMContentLoaded', () => {
             saveState();
             draw();
         }
-        connectionContextMenu.style.display = 'none';
+        
     });
 
     editConnectionLabelBtn.addEventListener('click', () => {
@@ -927,7 +982,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 draw();
             }
         }
-        connectionContextMenu.style.display = 'none';
+        
     });
 
     deleteConnectionBtn.addEventListener('click', () => {
@@ -936,7 +991,7 @@ document.addEventListener('DOMContentLoaded', () => {
             saveState();
             draw();
         }
-        connectionContextMenu.style.display = 'none';
+        
     });
 
     function setDarkMode(isDark) {
@@ -984,7 +1039,10 @@ document.addEventListener('DOMContentLoaded', () => {
         setDarkMode(true);
     }
 
+    // Initialize selectedConnection to null and update toolbar
+    selectedConnection = null;
+    updateToolbar();
+
     saveState();
     updateUndoRedoButtons();
-    updateToolbar();
 });
