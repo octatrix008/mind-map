@@ -1,28 +1,23 @@
 document.addEventListener('DOMContentLoaded', () => {
     const canvas = document.getElementById('mindmap-canvas');
     const ctx = canvas.getContext('2d');
-    const contextMenu = document.getElementById('context-menu');
-    const editNodeBtn = document.getElementById('edit-node');
-    const deleteNodeBtn = document.getElementById('delete-node');
-    const changeColorBtn = document.getElementById('change-color-node');
-    const changeShapeBtn = document.getElementById('change-shape-node');
-    const addImageBtn = document.getElementById('add-image-node');
+    const defaultToolbar = document.getElementById('default-toolbar');
+    const selectionToolbar = document.getElementById('selection-toolbar');
     const connectionContextMenu = document.getElementById('connection-context-menu');
-    const changeConnectionColorBtn = document.getElementById('change-connection-color');
-    const changeConnectionThicknessBtn = document.getElementById('change-connection-thickness');
-    const changeConnectionStyleBtn = document.getElementById('change-connection-style');
     const undoBtn = document.getElementById('undoBtn');
     const redoBtn = document.getElementById('redoBtn');
     const darkModeBtn = document.getElementById('darkModeBtn');
-    const alignmentToolbar = document.getElementById('alignment-toolbar');
-    const exportPngBtn = document.getElementById('exportPngBtn');
-    const exportSvgBtn = document.getElementById('exportSvgBtn');
+    const changeConnectionColorBtn = document.getElementById('change-connection-color');
+    const changeConnectionThicknessBtn = document.getElementById('change-connection-thickness');
+    const changeConnectionStyleBtn = document.getElementById('change-connection-style');
+    const editConnectionLabelBtn = document.getElementById('edit-connection-label');
+    const deleteConnectionBtn = document.getElementById('delete-connection');
+    const searchInput = document.getElementById('search-input');
 
     let nodes = [];
     let connections = [];
-    let selectedNodeForContextMenu = null;
-    let selectedConnectionForContextMenu = null;
     let selectedNodes = [];
+    let selectedConnection = null;
     let draggedNode = null;
     let isDragging = false;
     let didDrag = false;
@@ -89,11 +84,13 @@ document.addEventListener('DOMContentLoaded', () => {
         redoBtn.disabled = historyIndex >= history.length - 1;
     }
 
-    function updateAlignmentToolbar() {
-        if (selectedNodes.length > 1) {
-            alignmentToolbar.classList.remove('hidden');
+    function updateToolbar() {
+        if (selectedNodes.length > 0) {
+            defaultToolbar.classList.add('hidden');
+            selectionToolbar.classList.remove('hidden');
         } else {
-            alignmentToolbar.classList.add('hidden');
+            defaultToolbar.classList.remove('hidden');
+            selectionToolbar.classList.add('hidden');
         }
     }
 
@@ -125,9 +122,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const fromNode = nodes.find(n => n.id === conn.from);
             const toNode = nodes.find(n => n.id === conn.to);
             if (fromNode && toNode) {
+                const fromX = fromNode.x + fromNode.width / 2;
+                const fromY = fromNode.y + fromNode.height / 2;
+                const toX = toNode.x + toNode.width / 2;
+                const toY = toNode.y + toNode.height / 2;
+
                 ctx.beginPath();
-                ctx.moveTo(fromNode.x + fromNode.width / 2, fromNode.y + fromNode.height / 2);
-                ctx.lineTo(toNode.x + toNode.width / 2, toNode.y + toNode.height / 2);
+                ctx.moveTo(fromX, fromY);
+                ctx.lineTo(toX, toY);
                 ctx.strokeStyle = conn.color || connectionColor;
                 ctx.lineWidth = conn.thickness || 2;
 
@@ -146,6 +148,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 ctx.setLineDash([]); // Reset line dash
+
+                if (conn.label) {
+                    const midX = (fromX + toX) / 2;
+                    const midY = (fromY + toY) / 2;
+                    const angle = Math.atan2(toY - fromY, toX - fromX);
+                    
+                    ctx.save();
+                    ctx.translate(midX, midY);
+                    ctx.rotate(angle);
+                    
+                    const nodeTextColor = getCSSVar('--text-color');
+                    const nodeFont = `14px ${getCSSVar('--font-family')}`;
+                    ctx.font = nodeFont;
+                    ctx.fillStyle = nodeTextColor;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'bottom';
+                    
+                    const textWidth = ctx.measureText(conn.label).width;
+                    const textHeight = 14;
+                    ctx.fillStyle = getCSSVar('--canvas-background');
+                    ctx.fillRect(-textWidth / 2 - 4, -textHeight - 2, textWidth + 8, textHeight + 4);
+
+                    ctx.fillStyle = nodeTextColor;
+                    ctx.fillText(conn.label, 0, 0);
+                    
+                    ctx.restore();
+                }
             }
         });
 
@@ -232,6 +261,14 @@ document.addEventListener('DOMContentLoaded', () => {
         context.fill();
         context.stroke();
         context.restore();
+
+        if (node.isHighlighted) {
+            context.save();
+            context.strokeStyle = '#ff0000';
+            context.lineWidth = 3;
+            context.stroke();
+            context.restore();
+        }
 
         if (node.imageUrl) {
             const img = new Image();
@@ -331,30 +368,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
 
-        const node = getNodeAt(x, y);
-        if (node) {
-            selectedNodeForContextMenu = node;
-            contextMenu.style.display = 'block';
-            contextMenu.style.left = `${e.clientX}px`;
-            contextMenu.style.top = `${e.clientY}px`;
-            connectionContextMenu.style.display = 'none';
+        selectedConnection = getConnectionAt(x, y);
+        if (selectedConnection) {
+            connectionContextMenu.style.display = 'block';
+            connectionContextMenu.style.left = `${e.clientX}px`;
+            connectionContextMenu.style.top = `${e.clientY}px`;
         } else {
-            const conn = getConnectionAt(x, y);
-            if (conn) {
-                selectedConnectionForContextMenu = conn;
-                connectionContextMenu.style.display = 'block';
-                connectionContextMenu.style.left = `${e.clientX}px`;
-                connectionContextMenu.style.top = `${e.clientY}px`;
-                contextMenu.style.display = 'none';
-            } else {
-                contextMenu.style.display = 'none';
-                connectionContextMenu.style.display = 'none';
-            }
+            connectionContextMenu.style.display = 'none';
         }
     });
 
     canvas.addEventListener('mousedown', (e) => {
-        contextMenu.style.display = 'none';
+        connectionContextMenu.style.display = 'none';
         const rect = canvas.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
@@ -378,7 +403,8 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             if (!e.shiftKey) {
                 selectedNodes = [];
-                updateAlignmentToolbar();
+                selectedConnection = null;
+                updateToolbar();
             }
         }
         draw();
@@ -424,35 +450,32 @@ document.addEventListener('DOMContentLoaded', () => {
         const y = e.clientY - rect.top;
 
         const clickedNode = getNodeAt(x, y);
+        selectedConnection = getConnectionAt(x, y);
 
         if (clickedNode) {
             if (e.shiftKey) {
-                // Multi-selection logic
                 if (selectedNodes.includes(clickedNode)) {
                     selectedNodes = selectedNodes.filter(n => n !== clickedNode);
                 } else {
                     selectedNodes.push(clickedNode);
                 }
             } else {
-                // Single selection and connection logic
                 if (selectedNodes.length === 1 && selectedNodes[0] !== clickedNode) {
-                    // If one node is selected and we click another, connect them
                     const fromNode = selectedNodes[0];
-                    connections.push({ from: fromNode.id, to: clickedNode.id, style: 'solid', arrow: false });
+                    connections.push({ from: fromNode.id, to: clickedNode.id, style: 'solid', arrow: false, label: '' });
                     saveState();
-                    selectedNodes = [clickedNode]; // Select the second node after connecting
+                    selectedNodes = [clickedNode];
                 } else {
-                    // Otherwise, just select the clicked node
                     selectedNodes = [clickedNode];
                 }
             }
-        } else {
-            // Clicked on empty space
+        } else if (!selectedConnection) {
             if (!e.shiftKey) {
                 selectedNodes = [];
             }
         }
-        updateAlignmentToolbar();
+
+        updateToolbar();
         draw();
     });
 
@@ -504,7 +527,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const downloadAnchorNode = document.createElement('a');
         downloadAnchorNode.setAttribute("href",     dataStr);
         downloadAnchorNode.setAttribute("download", "mind-map.json");
-        document.body.appendChild(downloadAnchorNode); // required for firefox
+        document.body.appendChild(downloadAnchorNode);
         downloadAnchorNode.click();
         downloadAnchorNode.remove();
     }
@@ -525,7 +548,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         tempCtx.translate(-minX + padding, -minY + padding);
 
-        // Draw on the temporary canvas
         const connectionColor = getCSSVar('--connection-color');
         tempCtx.strokeStyle = connectionColor;
         tempCtx.lineWidth = 2;
@@ -553,7 +575,34 @@ document.addEventListener('DOMContentLoaded', () => {
                     drawArrow(tempCtx, fromNode, toNode, conn.thickness || 2);
                 }
 
-                tempCtx.setLineDash([]); // Reset line dash
+                ctx.setLineDash([]);
+
+                if (conn.label) {
+                    const midX = (fromNode.x + fromNode.width / 2 + toNode.x + toNode.width / 2) / 2;
+                    const midY = (fromNode.y + fromNode.height / 2 + toNode.y + toNode.height / 2) / 2;
+                    const angle = Math.atan2(toNode.y + toNode.height / 2 - fromNode.y - fromNode.height / 2, toNode.x + toNode.width / 2 - fromNode.x - fromNode.width / 2);
+                    
+                    tempCtx.save();
+                    tempCtx.translate(midX, midY);
+                    tempCtx.rotate(angle);
+                    
+                    const nodeTextColor = getCSSVar('--text-color');
+                    const nodeFont = `14px ${getCSSVar('--font-family')}`;
+                    tempCtx.font = nodeFont;
+                    tempCtx.fillStyle = nodeTextColor;
+                    tempCtx.textAlign = 'center';
+                    tempCtx.textBaseline = 'bottom';
+                    
+                    const textWidth = tempCtx.measureText(conn.label).width;
+                    const textHeight = 14;
+                    tempCtx.fillStyle = getCSSVar('--canvas-background');
+                    tempCtx.fillRect(-textWidth / 2 - 4, -textHeight - 2, textWidth + 8, textHeight + 4);
+
+                    tempCtx.fillStyle = nodeTextColor;
+                    tempCtx.fillText(conn.label, 0, 0);
+                    
+                    tempCtx.restore();
+                }
             }
         });
 
@@ -565,7 +614,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const downloadAnchorNode = document.createElement('a');
         downloadAnchorNode.setAttribute("href",     dataUrl);
         downloadAnchorNode.setAttribute("download", "mind-map.png");
-        document.body.appendChild(downloadAnchorNode); // required for firefox
+        document.body.appendChild(downloadAnchorNode);
         downloadAnchorNode.click();
         downloadAnchorNode.remove();
     }
@@ -584,17 +633,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let svgContent = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">`;
 
-        // Add styles
         svgContent += `<defs><style type="text/css"><![CDATA[
             .node-text { font-family: ${getCSSVar('--font-family')}; font-size: 16px; text-anchor: middle; dominant-baseline: middle; }
+            .connection-label { font-family: ${getCSSVar('--font-family')}; font-size: 14px; text-anchor: middle; dominant-baseline: bottom; }
         ]]></style></defs>`;
 
-        // Add background
         svgContent += `<rect width="100%" height="100%" fill="${getCSSVar('--canvas-background')}"/>`;
 
         svgContent += `<g transform="translate(${-minX + padding}, ${-minY + padding})">`;
 
-        // Draw connections
         connections.forEach(conn => {
             const fromNode = nodes.find(n => n.id === conn.from);
             const toNode = nodes.find(n => n.id === conn.to);
@@ -620,10 +667,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     const ay2 = y2 - headlen * Math.sin(angle + Math.PI / 6);
                     svgContent += `<polygon points="${x2},${y2} ${ax1},${ay1} ${ax2},${ay2}" fill="${conn.color || getCSSVar('--connection-color')}"/>`;
                 }
+
+                if (conn.label) {
+                    const midX = (x1 + x2) / 2;
+                    const midY = (y1 + y2) / 2;
+                    const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+                    svgContent += `<g transform="translate(${midX}, ${midY}) rotate(${angle})">`;
+                    svgContent += `<rect x="-25" y="-15" width="50" height="20" fill="${getCSSVar('--canvas-background')}"/>`;
+                    svgContent += `<text fill="${getCSSVar('--text-color')}" class="connection-label">${conn.label}</text>`;
+                    svgContent += `</g>`;
+                }
             }
         });
 
-        // Draw nodes
         nodes.forEach(node => {
             const nodeBg = node.color || getCSSVar('--node-bg');
             const nodeBorder = getCSSVar('--node-border');
@@ -640,7 +696,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 case 'circle':
                     svgContent += `<circle cx="${node.x + node.width / 2}" cy="${node.y + node.height / 2}" r="${Math.min(node.width, node.height) / 2}" fill="${nodeBg}" stroke="${nodeBorder}" stroke-width="1"/>`;
                     break;
-                // Star and Hexagon are complex to represent in SVG path, so we approximate with a rectangle for now.
                 default:
                     svgContent += `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="12" ry="12" fill="${nodeBg}" stroke="${nodeBorder}" stroke-width="1"/>`;
             }
@@ -654,7 +709,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const downloadAnchorNode = document.createElement('a');
         downloadAnchorNode.setAttribute("href",     dataStr);
         downloadAnchorNode.setAttribute("download", "mind-map.svg");
-        document.body.appendChild(downloadAnchorNode); // required for firefox
+        document.body.appendChild(downloadAnchorNode);
         downloadAnchorNode.click();
         downloadAnchorNode.remove();
     }
@@ -693,27 +748,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    editNodeBtn.addEventListener('click', () => {
-        if (selectedNodeForContextMenu) {
-            editNodeText(selectedNodeForContextMenu);
+    document.getElementById('edit-node').addEventListener('click', () => {
+        if (selectedNodes.length === 1) {
+            editNodeText(selectedNodes[0]);
         }
-        contextMenu.style.display = 'none';
     });
 
-    deleteNodeBtn.addEventListener('click', () => {
+    document.getElementById('delete-node').addEventListener('click', () => {
         if (selectedNodes.length > 0) {
             const idsToDelete = selectedNodes.map(n => n.id);
             nodes = nodes.filter(n => !idsToDelete.includes(n.id));
             connections = connections.filter(c => !idsToDelete.includes(c.from) && !idsToDelete.includes(c.to));
             selectedNodes = [];
-            updateAlignmentToolbar();
+            updateToolbar();
             saveState();
             draw();
         }
-        contextMenu.style.display = 'none';
     });
 
-    changeColorBtn.addEventListener('click', () => {
+    document.getElementById('change-color-node').addEventListener('click', () => {
         if (selectedNodes.length > 0) {
             const color = prompt("Enter the new color for the selected nodes:", selectedNodes[0].color || '#ffffff');
             if (color) {
@@ -722,10 +775,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 draw();
             }
         }
-        contextMenu.style.display = 'none';
     });
 
-    changeShapeBtn.addEventListener('click', () => {
+    document.getElementById('change-shape-node').addEventListener('click', () => {
         if (selectedNodes.length > 0) {
             const shape = prompt("Enter the new shape for the selected nodes (rectangle, ellipse, diamond, circle, star, hexagon):", selectedNodes[0].shape || 'rectangle');
             if (shape) {
@@ -734,50 +786,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 draw();
             }
         }
-        contextMenu.style.display = 'none';
     });
 
-    changeConnectionColorBtn.addEventListener('click', () => {
-        if (selectedConnectionForContextMenu) {
-            const color = prompt("Enter the new color for the connection:", selectedConnectionForContextMenu.color || '#000000');
-            if (color) {
-                selectedConnectionForContextMenu.color = color;
-                saveState();
-                draw();
-            }
-        }
-        connectionContextMenu.style.display = 'none';
-    });
-
-    changeConnectionThicknessBtn.addEventListener('click', () => {
-        if (selectedConnectionForContextMenu) {
-            const thickness = prompt("Enter the new thickness for the connection:", selectedConnectionForContextMenu.thickness || 2);
-            if (thickness) {
-                selectedConnectionForContextMenu.thickness = thickness;
-                saveState();
-                draw();
-            }
-        }
-        connectionContextMenu.style.display = 'none';
-    });
-
-    changeConnectionStyleBtn.addEventListener('click', () => {
-        if (selectedConnectionForContextMenu) {
-            const style = prompt("Enter the new style for the connection (solid, dashed, dotted):", selectedConnectionForContextMenu.style || 'solid');
-            const arrow = prompt("Add arrow to connection? (yes/no):", selectedConnectionForContextMenu.arrow ? 'yes' : 'no');
-            if (style) {
-                selectedConnectionForContextMenu.style = style;
-            }
-            if (arrow) {
-                selectedConnectionForContextMenu.arrow = arrow.toLowerCase() === 'yes';
-            }
-            saveState();
-            draw();
-        }
-        connectionContextMenu.style.display = 'none';
-    });
-
-    addImageBtn.addEventListener('click', () => {
+    document.getElementById('add-image-node').addEventListener('click', () => {
         if (selectedNodes.length === 1) {
             const imageUrl = prompt("Enter the image URL for the node:", selectedNodes[0].imageUrl || '');
             if (imageUrl) {
@@ -786,7 +797,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 draw();
             }
         }
-        contextMenu.style.display = 'none';
     });
 
     function alignNodes(mode) {
@@ -852,6 +862,83 @@ document.addEventListener('DOMContentLoaded', () => {
         draw();
     }
 
+    searchInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        if (searchTerm === '') {
+            nodes.forEach(node => node.isHighlighted = false);
+        } else {
+            nodes.forEach(node => {
+                if (node.text.toLowerCase().includes(searchTerm)) {
+                    node.isHighlighted = true;
+                } else {
+                    node.isHighlighted = false;
+                }
+            });
+        }
+        draw();
+    });
+
+    changeConnectionColorBtn.addEventListener('click', () => {
+        if (selectedConnection) {
+            const color = prompt("Enter the new color for the connection:", selectedConnection.color || '#000000');
+            if (color) {
+                selectedConnection.color = color;
+                saveState();
+                draw();
+            }
+        }
+        connectionContextMenu.style.display = 'none';
+    });
+
+    changeConnectionThicknessBtn.addEventListener('click', () => {
+        if (selectedConnection) {
+            const thickness = prompt("Enter the new thickness for the connection:", selectedConnection.thickness || 2);
+            if (thickness) {
+                selectedConnection.thickness = thickness;
+                saveState();
+                draw();
+            }
+        }
+        connectionContextMenu.style.display = 'none';
+    });
+
+    changeConnectionStyleBtn.addEventListener('click', () => {
+        if (selectedConnection) {
+            const style = prompt("Enter the new style for the connection (solid, dashed, dotted):", selectedConnection.style || 'solid');
+            const arrow = prompt("Add arrow to connection? (yes/no):", selectedConnection.arrow ? 'yes' : 'no');
+            if (style) {
+                selectedConnection.style = style;
+            }
+            if (arrow) {
+                selectedConnection.arrow = arrow.toLowerCase() === 'yes';
+            }
+            saveState();
+            draw();
+        }
+        connectionContextMenu.style.display = 'none';
+    });
+
+    editConnectionLabelBtn.addEventListener('click', () => {
+        if (selectedConnection) {
+            const label = prompt("Enter the new label for the connection:", selectedConnection.label || '');
+            if (label !== null) {
+                selectedConnection.label = label;
+                saveState();
+                draw();
+            }
+        }
+        connectionContextMenu.style.display = 'none';
+    });
+
+    deleteConnectionBtn.addEventListener('click', () => {
+        if (selectedConnection) {
+            connections = connections.filter(c => c !== selectedConnection);
+            saveState();
+            draw();
+        }
+        connectionContextMenu.style.display = 'none';
+    });
+
     function setDarkMode(isDark) {
         if (isDark) {
             document.body.classList.add('dark-mode');
@@ -873,8 +960,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('addNodeBtn').addEventListener('click', addNode);
     document.getElementById('resetViewBtn').addEventListener('click', resetView);
     document.getElementById('exportBtn').addEventListener('click', exportMindMap);
-    exportPngBtn.addEventListener('click', exportPNG);
-    exportSvgBtn.addEventListener('click', exportSVG);
+    document.getElementById('exportPngBtn').addEventListener('click', exportPNG);
+    document.getElementById('exportSvgBtn').addEventListener('click', exportSVG);
     document.getElementById('importBtn').addEventListener('click', () => importInput.click());
     undoBtn.addEventListener('click', undo);
     redoBtn.addEventListener('click', redo);
@@ -899,5 +986,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
     saveState();
     updateUndoRedoButtons();
-    updateAlignmentToolbar();
+    updateToolbar();
 });
